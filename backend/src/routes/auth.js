@@ -166,17 +166,27 @@ router.patch(
 // GET /api/auth/google
 router.get(
   '/google',
-  passport.authenticate('google', { scope: ['profile', 'email'] })
+  (req, res, next) => {
+    if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+      return res.status(503).json({ message: 'Google authentication is not configured' });
+    }
+    passport.authenticate('google', { scope: ['profile', 'email'] })(req, res, next);
+  }
 );
 
 // Step 2: Google redirects back here after user consents
 // GET /api/auth/google/callback
 router.get(
   '/google/callback',
-  passport.authenticate('google', {
-    session: false,
-    failureRedirect: `${process.env.FRONTEND_URL}/login?error=google_failed`,
-  }),
+  (req, res, next) => {
+    if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+      return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/login?error=google_not_configured`);
+    }
+    passport.authenticate('google', {
+      session: false,
+      failureRedirect: `${process.env.FRONTEND_URL}/login?error=google_failed`,
+    })(req, res, next);
+  },
   (req, res) => {
     // passport.authenticate sets req.user = false when strategy calls done(null, false)
     if (!req.user) {

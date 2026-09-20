@@ -22,6 +22,7 @@ app.use(helmet());
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 min
   max: 20,
+  skip: () => process.env.NODE_ENV === 'test',
   message: { message: 'Too many attempts, please try again later' },
   standardHeaders: true,
   legacyHeaders: false,
@@ -30,21 +31,25 @@ const authLimiter = rateLimit({
 const pinLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
+  skip: () => process.env.NODE_ENV === 'test',
   message: { message: 'Too many PIN attempts, please try again later' },
   standardHeaders: true,
   legacyHeaders: false,
 });
 
 // ─── CORS ─────────────────────────────────────────────────────────────────────
-const allowedOrigins = process.env.ALLOWED_ORIGINS
-  ? process.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim())
-  : ['http://localhost:5173'];
+const allowedOrigins = (process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',')
+  : ['http://localhost:5173']
+).map((o) => o.trim().replace(/\/+$/, '')).filter(Boolean);
 
 app.use(
   cors({
     origin: (origin, callback) => {
       // allow server-to-server / curl with no origin
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (!origin) return callback(null, true);
+      const cleanOrigin = origin.replace(/\/+$/, '');
+      if (allowedOrigins.includes(cleanOrigin)) {
         callback(null, true);
       } else {
         callback(new Error(`CORS blocked: ${origin}`));
