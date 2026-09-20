@@ -8,7 +8,10 @@ const BACKEND_BASE = import.meta.env.VITE_API_URL
   ? import.meta.env.VITE_API_URL.replace(/\/api\/?$/, '')
   : (import.meta.env.PROD ? 'https://snapgallery-4jqc.onrender.com' : 'http://localhost:5000');
 
-const GOOGLE_AUTH_URL = `${BACKEND_BASE}/api/auth/google`;
+const getGoogleAuthUrl = () => {
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  return `${BACKEND_BASE}/api/auth/google${origin ? `?state=${encodeURIComponent(origin)}` : ''}`;
+};
 
 /* ── Google Logo ── */
 const GoogleLogo = () => (
@@ -356,7 +359,7 @@ export default function LoginPage() {
                   <div style={{ flex:1, height:1, background:'#e4e7f0' }}/>
                 </div>
                 <a
-                  href={GOOGLE_AUTH_URL}
+                  href={getGoogleAuthUrl()}
                   style={{
                     display:'flex', alignItems:'center', justifyContent:'center', gap:10,
                     padding:'11px 16px', border:'1.5px solid #e4e7f0', borderRadius:12,

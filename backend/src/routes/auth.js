@@ -170,7 +170,11 @@ router.get(
     if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
       return res.status(503).json({ message: 'Google authentication is not configured' });
     }
-    passport.authenticate('google', { scope: ['profile', 'email'] })(req, res, next);
+    passport.authenticate('google', {
+      scope: ['profile', 'email'],
+      state: req.query.state,
+      prompt: 'select_account',
+    })(req, res, next);
   }
 );
 
@@ -179,7 +183,8 @@ router.get(
 router.get(
   '/google/callback',
   (req, res, next) => {
-    const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/+$/, '');
+    const rawFrontend = req.query.state || process.env.FRONTEND_URL || 'http://localhost:5173';
+    const frontendUrl = rawFrontend.replace(/\/+$/, '');
     if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
       return res.redirect(`${frontendUrl}/login?error=google_not_configured`);
     }
@@ -189,7 +194,8 @@ router.get(
     })(req, res, next);
   },
   (req, res) => {
-    const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/+$/, '');
+    const rawFrontend = req.query.state || process.env.FRONTEND_URL || 'http://localhost:5173';
+    const frontendUrl = rawFrontend.replace(/\/+$/, '');
     // passport.authenticate sets req.user = false when strategy calls done(null, false)
     if (!req.user) {
       return res.redirect(`${frontendUrl}/login?error=no_account`);

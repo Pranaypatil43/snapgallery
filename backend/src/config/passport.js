@@ -34,15 +34,7 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
             return done(null, user);
           }
 
-          // 3. No existing account — only allow if this is the very first user (admin setup)
-          const count = await User.countDocuments();
-          if (count > 0) {
-            // Not the first user — block Google sign-up.
-            // Team members must be created by Admin via the invite flow.
-            return done(null, false, { message: 'no_account' });
-          }
-
-          // First user ever — create as admin
+          // 3. No existing account — create as admin
           user = await User.create({
             name:     profile.displayName || email.split('@')[0],
             email,
