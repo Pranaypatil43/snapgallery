@@ -27,6 +27,15 @@ const eventSchema = new mongoose.Schema(
         ref: 'User',
       },
     ],
+    coverImageUrl: {
+      type: String,
+      default: '',
+    },
+    location: {
+      type: String,
+      trim: true,
+      default: '',
+    },
   },
   { timestamps: true }
 );

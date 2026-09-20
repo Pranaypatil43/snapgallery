@@ -116,6 +116,17 @@ describe('POST /api/auth/login', () => {
     });
     expect(res.status).toBe(401);
   });
+
+  it('rejects login when role does not match user role', async () => {
+    // Alice is admin, try to login specifying role 'team_member'
+    const res = await request(app).post('/api/auth/login').send({
+      email: 'alice@example.com',
+      password: 'password123',
+      role: 'team_member',
+    });
+    expect(res.status).toBe(401);
+    expect(res.body.message).toBe('Invalid email or password');
+  });
 });
 
 describe('GET /api/auth/me', () => {

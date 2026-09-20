@@ -13,7 +13,7 @@
  */
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getEvent, addMembers, removeMember, getTeamMembers } from '../../api/events';
+import { getEvent, addMembers, removeMember, getTeamMembers, uploadEventCover } from '../../api/events';
 import { getEventPhotos, deletePhoto } from '../../api/photos';
 import { getGalleryByEvent } from '../../api/galleries';
 import { toast } from '../../components/Toast';
@@ -32,6 +32,24 @@ export default function EventDetailPage() {
   const [tab,       setTab]      = useState('overview');
   const [memberToAdd,setMemberToAdd]= useState('');
   const [deleteTarget,setDeleteTarget]= useState(null);
+  const [uploadingCover, setUploadingCover] = useState(false);
+
+  const handleCoverUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingCover(true);
+    try {
+      const fd = new FormData();
+      fd.append('cover', file);
+      const res = await uploadEventCover(id, fd);
+      setEvent(prev => ({ ...prev, coverImageUrl: res.data.coverImageUrl }));
+      toast.success('Cover image updated!');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to update cover image');
+    } finally {
+      setUploadingCover(false);
+    }
+  };
 
   const fetchAll = useCallback(async () => {
     try {
@@ -87,6 +105,13 @@ export default function EventDetailPage() {
         {/* ── IMAGE SLOT 1: add backgroundImage to event-hero ── */}
         <div className="event-hero" style={{ backgroundImage: event.coverImageUrl ? `url(${event.coverImageUrl})` : undefined }}>
           <div className="event-hero-overlay" />
+          <label style={{ position: 'absolute', top: 16, right: 16, zIndex: 10, cursor: 'pointer' }}>
+            <span className="btn btn-sm" style={{ background: 'rgba(0,0,0,.55)', color: '#fff', border: '1px solid rgba(255,255,255,.3)', backdropFilter: 'blur(8px)', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              {uploadingCover ? 'Uploading…' : (event.coverImageUrl ? 'Change Cover' : 'Upload Cover')}
+            </span>
+            <input type="file" accept="image/*" style={{ display: 'none' }} disabled={uploadingCover} onChange={handleCoverUpload} />
+          </label>
           <div className="event-hero-content">
             <div>
               <button className="back-btn" style={{ color: 'rgba(255,255,255,.75)', marginBottom: 8 }} onClick={() => navigate('/admin/events')}>

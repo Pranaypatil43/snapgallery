@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { login as loginApi } from '../api/auth';
 import { accessGalleryByPin } from '../api/galleries';
@@ -78,6 +78,7 @@ export default function LoginPage() {
   const [searchParams] = useSearchParams();
 
   const [role,       setRole]       = useState('admin');
+  const roleRef = useRef('admin');
   const [form,       setForm]       = useState({ email: '', password: '' });
   const [errors,     setErrors]     = useState({});
   const [loading,    setLoading]    = useState(false);
@@ -103,6 +104,7 @@ export default function LoginPage() {
 
   const switchRole = (r) => {
     setRole(r);
+    roleRef.current = r;
     setErrors({});
     setApiError('');
     setPin('');
@@ -122,16 +124,18 @@ export default function LoginPage() {
     e.preventDefault();
     if (!validate()) return;
     setLoading(true);
+    const currentRole = roleRef.current; // always up-to-date even after tab switch
+    const expectedRole = currentRole === 'admin' ? 'admin' : 'team_member';
     try {
-      const res  = await loginApi(form);
+      const res  = await loginApi({ ...form, role: expectedRole });
       const user = res.data.user;
-      if (role === 'admin' && user.role !== 'admin') {
-        setApiError('This is a Team Member account. Switch to the Team Member tab.');
-        setLoading(false); return;
+      if (expectedRole === 'admin' && user.role !== 'admin') {
+        setApiError('Invalid email or password');
+        return;
       }
-      if (role === 'team' && user.role !== 'team_member') {
-        setApiError('This is an Admin account. Switch to the Admin tab.');
-        setLoading(false); return;
+      if (expectedRole === 'team_member' && user.role !== 'team_member') {
+        setApiError('Invalid email or password');
+        return;
       }
       login(res.data.token, user);
       navigate(user.role === 'admin' ? '/admin' : '/team');

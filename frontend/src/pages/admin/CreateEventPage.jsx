@@ -11,7 +11,7 @@
  */
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { createEvent, getTeamMembers } from '../../api/events';
+import { createEvent, uploadEventCover, getTeamMembers } from '../../api/events';
 import { toast } from '../../components/Toast';
 import { AdminSidebar } from '../../components/Sidebar';
 import Topbar from '../../components/Topbar';
@@ -24,6 +24,7 @@ export default function CreateEventPage() {
   const [members, setMembers]   = useState([]);
   const [selected, setSelected] = useState([]);
   const [loading, setLoading]   = useState(false);
+  const [coverFile, setCoverFile] = useState(null);
   const [coverPreview, setCoverPreview] = useState(null);
 
   useEffect(() => {
@@ -41,7 +42,20 @@ export default function CreateEventPage() {
 
   const handleCoverChange = (e) => {
     const file = e.target.files?.[0];
-    if (file) setCoverPreview(URL.createObjectURL(file));
+    if (file) {
+      setCoverFile(file);
+      setCoverPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleRemoveCover = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setCoverFile(null);
+    if (coverPreview) {
+      URL.revokeObjectURL(coverPreview);
+      setCoverPreview(null);
+    }
   };
 
   const toggleMember = (id) => {
@@ -53,9 +67,27 @@ export default function CreateEventPage() {
     if (!validate()) return;
     setLoading(true);
     try {
-      const res = await createEvent({ ...form, memberIds: selected });
+      const payload = {
+        ...form,
+        date: form.date ? form.date : undefined,
+        memberIds: selected,
+      };
+      const res = await createEvent(payload);
+      const newEvent = res.data.event;
+
+      if (coverFile) {
+        try {
+          const fd = new FormData();
+          fd.append('cover', coverFile);
+          await uploadEventCover(newEvent._id, fd);
+        } catch (coverErr) {
+          console.error('Cover upload error:', coverErr);
+          toast.warning('Event created, but cover image failed to upload');
+        }
+      }
+
       toast.success('Event created successfully!');
-      navigate(`/admin/events/${res.data.event._id}`);
+      navigate(`/admin/events/${newEvent._id}`);
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to create event');
     } finally { setLoading(false); }
@@ -105,13 +137,21 @@ export default function CreateEventPage() {
                   {/* Cover image */}
                   <div className="card" style={{ padding: 24 }}>
                     <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16 }}>Cover Image</h3>
-                    <label style={{ cursor: 'pointer' }}>
+                    <label style={{ cursor: 'pointer', display: 'block' }}>
                       {coverPreview ? (
                         /* ── IMAGE SLOT: preview of selected cover image ── */
                         <div style={{ height: 200, borderRadius: 'var(--r-md)', overflow: 'hidden', position: 'relative' }}>
                           <img src={coverPreview} alt="Cover preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                          <div style={{ position: 'absolute', bottom: 10, right: 10 }}>
+                          <div style={{ position: 'absolute', bottom: 10, right: 10, display: 'flex', gap: 6 }}>
                             <span className="badge badge-navy" style={{ fontSize: 11 }}>Change</span>
+                            <button
+                              type="button"
+                              className="badge"
+                              style={{ fontSize: 11, border: 'none', cursor: 'pointer', background: '#fee2e2', color: '#dc2626' }}
+                              onClick={handleRemoveCover}
+                            >
+                              Remove
+                            </button>
                           </div>
                         </div>
                       ) : (
@@ -169,7 +209,12 @@ export default function CreateEventPage() {
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 24, paddingTop: 24, borderTop: '1px solid var(--border)' }}>
                 <button type="button" className="btn btn-outline" onClick={() => navigate('/admin/events')}>Cancel</button>
                 <button type="submit" className="btn btn-gold btn-lg" disabled={loading}>
-                  {loading ? <Spinner size="sm" /> : '✓ Create Event'}
+                  {loading ? (
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <Spinner size="sm" />
+                      {coverFile ? 'Creating & Uploading Cover…' : 'Creating Event…'}
+                    </span>
+                  ) : '✓ Create Event'}
                 </button>
               </div>
             </form>

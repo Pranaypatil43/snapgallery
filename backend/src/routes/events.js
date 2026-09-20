@@ -5,6 +5,28 @@ const Event = require('../models/Event');
 const User = require('../models/User');
 const { authenticate, authorize } = require('../middleware/auth');
 const validate = require('../middleware/validate');
+const { cloudinary } = require('../config/cloudinary');
+const multer = require('multer');
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+
+// Separate multer for cover images (single file, smaller folder)
+const coverStorage = new CloudinaryStorage({
+  cloudinary,
+  params: async (req, file) => ({
+    folder: `photo-sharing/covers`,
+    allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
+    transformation: [{ width: 1200, height: 600, crop: 'fill', quality: 'auto' }],
+    public_id: `cover-${Date.now()}`,
+  }),
+});
+const uploadCover = multer({
+  storage: coverStorage,
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) cb(null, true);
+    else cb(new Error('Only image files are allowed'), false);
+  },
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB
+});
 
 const router = express.Router();
 
@@ -18,12 +40,14 @@ router.post(
   [
     body('name').trim().notEmpty().withMessage('Event name is required'),
     body('description').optional().trim(),
-    body('date').optional().isISO8601().withMessage('Invalid date format'),
+    body('location').optional().trim(),
+    body('date').optional({ checkFalsy: true }).isISO8601().withMessage('Invalid date format'),
+    body('coverImageUrl').optional().trim(),
   ],
   validate,
   async (req, res) => {
     try {
-      const { name, description, date, memberIds } = req.body;
+      const { name, description, location, date, memberIds, coverImageUrl } = req.body;
 
       // Validate memberIds if provided
       let validatedMembers = [];
@@ -38,7 +62,9 @@ router.post(
       const event = await Event.create({
         name,
         description,
-        date,
+        location: location || '',
+        date: date || undefined,
+        coverImageUrl: coverImageUrl || '',
         createdBy: req.user._id,
         teamMembers: validatedMembers,
       });
@@ -188,6 +214,42 @@ router.delete(
       await event.save();
 
       res.json({ message: 'Member removed', event });
+    } catch (err) {
+      res.status(500).json({ message: err.message });
+    }
+  }
+);
+
+// ─── Admin: Upload cover image for an event ──────────────────────────────────
+// POST /api/events/:id/cover
+router.post(
+  '/:id/cover',
+  authorize('admin'),
+  [param('id').isMongoId().withMessage('Invalid event ID')],
+  validate,
+  uploadCover.single('cover'),
+  async (req, res) => {
+    try {
+      const event = await Event.findById(req.params.id);
+      if (!event) return res.status(404).json({ message: 'Event not found' });
+      if (event.createdBy.toString() !== req.user._id.toString()) {
+        return res.status(403).json({ message: 'Access denied' });
+      }
+      if (!req.file) return res.status(400).json({ message: 'No image uploaded' });
+
+      // Delete old cover from Cloudinary if it exists
+      if (event.coverImageUrl) {
+        const publicId = event.coverImageUrl
+          .split('/upload/')[1]
+          ?.replace(/^v\d+\//, '')
+          ?.replace(/\.[^/.]+$/, '');
+        if (publicId) await cloudinary.uploader.destroy(publicId).catch(() => {});
+      }
+
+      event.coverImageUrl = req.file.path;
+      await event.save();
+
+      res.json({ coverImageUrl: event.coverImageUrl, event });
     } catch (err) {
       res.status(500).json({ message: err.message });
     }
