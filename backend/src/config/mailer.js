@@ -1,11 +1,17 @@
 const nodemailer = require('nodemailer');
 
+const emailUser = process.env.EMAIL_USER;
+const emailPass = (process.env.EMAIL_PASS || '').replace(/\s/g, '');
+
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: process.env.EMAIL_USER,
-    pass: (process.env.EMAIL_PASS || '').replace(/\s/g, ''),
+    user: emailUser,
+    pass: emailPass,
   },
+  connectionTimeout: 5000,
+  greetingTimeout: 5000,
+  socketTimeout: 10000,
 });
 
 /**
@@ -13,10 +19,16 @@ const transporter = nodemailer.createTransport({
  * @param {{ name: string, email: string, password: string }} member
  */
 const sendInviteEmail = async ({ name, email, password }) => {
-  const loginUrl = `${process.env.FRONTEND_URL}/login`;
+  if (!emailUser || !emailPass) {
+    console.warn('EMAIL_USER or EMAIL_PASS not set. Skipping invitation email.');
+    return;
+  }
+
+  const frontendBase = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/+$/, '');
+  const loginUrl = `${frontendBase}/login`;
 
   await transporter.sendMail({
-    from: `"SnapGallery" <${process.env.EMAIL_USER}>`,
+    from: `"SnapGallery" <${emailUser}>`,
     to: email,
     subject: 'You have been added to SnapGallery — Your Login Credentials',
     html: `

@@ -102,7 +102,9 @@ router.get('/', async (req, res) => {
 // ─── Admin: List all team_member users (for adding to events) ────────────────
 router.get('/users/team-members', authorize('admin'), async (req, res) => {
   try {
-    const members = await User.find({ role: 'team_member' }).select('name email');
+    const members = await User.find({ role: 'team_member' })
+      .select('name email role createdAt')
+      .sort({ createdAt: -1 });
     res.json({ members });
   } catch (err) {
     res.status(500).json({ message: err.message });

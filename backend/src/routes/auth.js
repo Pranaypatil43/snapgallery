@@ -111,17 +111,23 @@ router.post(
 
       const user = await User.create({ name, email, password, role: 'team_member' });
 
-      // Send login credentials to the new team member's email
-      try {
-        await sendInviteEmail({ name, email, password });
-      } catch (mailErr) {
-        // Account is created — don't fail the request if email sending fails
-        console.error('Invite email failed:', mailErr.message);
+      // Send login credentials asynchronously in background — do not block HTTP response
+      if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+        sendInviteEmail({ name, email, password }).catch((mailErr) => {
+          console.error('Invite email failed in background:', mailErr.message);
+        });
       }
 
       res.status(201).json({
         message: 'Team member created successfully',
-        member: { id: user._id, name: user.name, email: user.email, role: user.role, createdAt: user.createdAt },
+        member: {
+          _id: user._id,
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          createdAt: user.createdAt,
+        },
       });
     } catch (err) {
       res.status(500).json({ message: err.message });

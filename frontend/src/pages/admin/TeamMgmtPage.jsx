@@ -110,7 +110,13 @@ export default function TeamMgmtPage() {
     try {
       const res = await inviteTeamMember(form);
       const newMember = res.data.member;
-      setMembers(prev => [{ ...newMember, eventCount: 0, uploadCount: 0 }, ...prev]);
+      const formatted = {
+        ...newMember,
+        _id: newMember._id || newMember.id,
+        eventCount: 0,
+        uploadCount: 0,
+      };
+      setMembers(prev => [formatted, ...prev]);
       toast.success(`${newMember.name} added as team member`);
       setShowInvite(false);
       setForm(EMPTY_FORM);
@@ -226,7 +232,7 @@ export default function TeamMgmtPage() {
                       <td><span className="badge badge-navy">{m.eventCount || 0} events</span></td>
                       <td><span style={{ fontWeight:700, color:'var(--navy)', fontSize:15 }}>{m.uploadCount || 0}</span></td>
                       <td style={{ color:'var(--text-soft)', fontSize:13 }}>
-                        {new Date(m.createdAt).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' })}
+                        {m.createdAt ? new Date(m.createdAt).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' }) : '—'}
                       </td>
                       <td><span className="badge badge-green">● Active</span></td>
                       <td>
