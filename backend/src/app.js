@@ -88,10 +88,10 @@ app.use(passport.session());
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
 // ─── Routes ──────────────────────────────────────────────────────────────────
-app.use('/api/auth/login',    authLimiter);
-app.use('/api/auth/register', authLimiter);
+app.use(['/api/auth/login', '/auth/login'], authLimiter);
+app.use(['/api/auth/register', '/auth/register'], authLimiter);
 app.use('/api/galleries/public', pinLimiter);
-app.use('/api/auth', authRoutes);
+app.use(['/api/auth', '/auth'], authRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/photos', photoRoutes);
 app.use('/api/galleries', galleryRoutes);

@@ -1,7 +1,14 @@
 import axios from 'axios';
 
-const defaultBaseURL = import.meta.env.VITE_API_URL 
-  || (import.meta.env.PROD ? 'https://snapgallery-4jqc.onrender.com/api' : '/api');
+const rawBaseURL = import.meta.env.VITE_API_URL;
+let defaultBaseURL;
+
+if (!rawBaseURL) {
+  defaultBaseURL = import.meta.env.PROD ? 'https://snapgallery-4jqc.onrender.com/api' : '/api';
+} else {
+  const cleaned = rawBaseURL.trim().replace(/\/+$/, '');
+  defaultBaseURL = cleaned.endsWith('/api') ? cleaned : `${cleaned}/api`;
+}
 
 const api = axios.create({
   baseURL: defaultBaseURL,
