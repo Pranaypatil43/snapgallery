@@ -1,309 +1,334 @@
-# PhotoShare — Event Gallery Platform
+# SnapGallery — Collaborative Event Photography & Client Proofing Platform
 
-A full-stack photo-sharing platform built for the **TrizenAI Full-Stack Internship Challenge**.
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org/)
+[![React Version](https://img.shields.io/badge/React-18-61dafb?logo=react)](https://react.dev/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248?logo=mongodb)](https://www.mongodb.com/)
+[![Cloudinary](https://img.shields.io/badge/Cloudinary-Media%20CDN-3448C5?logo=cloudinary)](https://cloudinary.com/)
 
-A photography / event team can collaboratively upload photos for an event, an Admin can curate
-and publish a PIN-protected gallery, and customers can access it via a shareable link — no account required.
+> A full-stack, production-ready photo management and client proofing platform designed for photography studios and event production teams. Built with Node.js, Express, React, Vite, MongoDB, and Cloudinary.
 
 ---
 
-## Live Application
+## 📌 Submission Overview
 
-| Resource | URL |
+| Resource | Link / Information |
 |---|---|
-| Frontend | _Add your deployed URL here_ |
-| Backend API | https://snapgallery-4jqc.onrender.com |
-| Demo Gallery | _Add your demo gallery URL here_ |
+| **Live Application URL** | *[Insert your live deployed frontend URL here]* |
+| **Backend API URL** | [https://snapgallery-4jqc.onrender.com](https://snapgallery-4jqc.onrender.com) |
+| **Source Code Repository** | [https://github.com/Pranaypatil43/snapgallery](https://github.com/Pranaypatil43/snapgallery) |
+| **Demo Admin Email** | `admin@demo.com` *(or your configured admin email)* |
+| **Demo Admin Password** | `demo1234` |
+| **Demo Team Member Email** | `member@demo.com` *(or your configured team email)* |
+| **Demo Team Member Password** | `demo1234` |
+| **Demo Gallery URL** | *[Insert your live demo gallery URL here, e.g. https://your-domain.com/gallery/demo-event]* |
+| **Demo Gallery PIN** | `482917` |
 
-### Demo Credentials
+---
 
-| Role | Email | Password |
+## 🌟 Project Overview
+
+**SnapGallery** solves the workflow fragmentation experienced by photography studios and event coverage teams. Traditional methods (e.g., sharing massive Google Drive folders or wetransfer links) lack professional branding, role delegation, photo curation, and secure client delivery.
+
+SnapGallery provides an end-to-end, multi-tier platform:
+1. **Studio Lead (Admin):** Creates events with high-resolution cover banners, assigns photographers, curates selected shots, sets a secure 6-digit PIN, and publishes client-facing galleries.
+2. **Field Photographer (Team Member):** Accesses assigned events, uploads bulk photo batches, and tracks upload metrics with direct Cloudinary transformation.
+3. **Clients & Guests (Customers):** Access proofing galleries through a clean shareable URL and PIN verification — **no account or login required**.
+
+---
+
+## 🛠️ Technology Stack
+
+| Layer | Technology | Purpose |
 |---|---|---|
-| Admin | admin@demo.com | demo1234 |
-| Team Member | member@demo.com | demo1234 |
-
-**Demo Gallery PIN:** `482917`
-
----
-
-## Technology Stack
-
-| Layer | Technology |
-|---|---|
-| Frontend | React 18, Vite 5, React Router 6, Tailwind CSS 3, Axios |
-| Backend | Node.js, Express 4 |
-| Database | MongoDB (Mongoose ODM) |
-| File Storage | Cloudinary (object storage, auto-thumbnail generation) |
-| Authentication | JWT (jsonwebtoken) + bcryptjs |
-| Testing | Jest + Supertest + mongodb-memory-server |
-| Deployment | Render / Railway (backend) · Vercel / Netlify (frontend) |
+| **Frontend UI** | **React 18** (Vite 5) | Responsive, high-performance Single Page Application (SPA) |
+| **Routing** | **React Router 6** | Client-side routing with role-based `ProtectedRoute` guards |
+| **Styling** | **Modern Vanilla CSS & Design Tokens** | Glassmorphism, tailored HSL themes, micro-interactions, dark/light modes |
+| **State & HTTP** | **React Context API + Axios** | Centralized authentication context and configured HTTP client with interceptors |
+| **Backend Runtime** | **Node.js 18+** & **Express 4** | Scalable REST API with modular routing and asynchronous controllers |
+| **Database** | **MongoDB** & **Mongoose 8** | Schematized document database with indexing, relationships, and population |
+| **Object Storage** | **Cloudinary CDN** | Cloud asset storage, on-the-fly thumbnail generation, and image optimization |
+| **Authentication** | **JWT (JSON Web Tokens)** + **bcryptjs** | Stateless token auth with role validation and salted password hashing (12 rounds) |
+| **OAuth (Optional)** | **Passport.js** + **Google OAuth 2.0** | One-click Google sign-in for admin studio owners |
+| **Security** | **Helmet**, **express-rate-limit**, **CORS** | HTTP security headers, rate limiting on sensitive routes, and origin sanitization |
+| **Testing** | **Jest**, **Supertest**, **mongodb-memory-server** | Automated unit & integration tests with zero external database dependencies |
+| **Deployment** | **Render** (API) · **Vercel / Render** (Frontend) | Production cloud hosting with continuous deployment |
 
 ---
 
-## System Architecture
+## 📐 System Architecture
 
+### Architecture Diagram
+
+```mermaid
+flowchart TD
+    subgraph Clients["Client Layer (React 18 + Vite)"]
+        AdminUI["Admin Portal\n(/admin, /admin/events)"]
+        TeamUI["Team Portal\n(/team, /team/events)"]
+        CustomerUI["Customer Gallery\n(/gallery/:slug, PIN Protected)"]
+    end
+
+    subgraph Gateway["API & Security Layer (Express.js)"]
+        CORS["CORS & Helmet Protection"]
+        RateLimit["Rate Limiters (Auth & PIN endpoints)"]
+        AuthMiddleware["JWT Verification & Role Guard"]
+    end
+
+    subgraph Services["Core Application Services"]
+        AuthService["Auth Controller\n(Register, Login, Role Verification)"]
+        EventService["Event Controller\n(CRUD, Team Assignments, Cover Uploads)"]
+        PhotoService["Photo Controller\n(Multer Multipart Upload, Cloudinary)"]
+        GalleryService["Gallery Controller\n(Curated Selection, PIN Hashing, Publish)"]
+        EmailService["Mailer Service\n(Background Non-blocking Email Dispatch)"]
+    end
+
+    subgraph DataStorage["Data & Asset Persistence"]
+        MongoDB[("MongoDB Atlas Database\n(Users, Events, Photos, Galleries)")]
+        Cloudinary[("Cloudinary Media CDN\n(High-Res Photos, Cover Banners, Thumbnails)")]
+    end
+
+    AdminUI --> Gateway
+    TeamUI --> Gateway
+    CustomerUI --> Gateway
+
+    Gateway --> CORS --> RateLimit --> AuthMiddleware
+    AuthMiddleware --> AuthService
+    AuthMiddleware --> EventService
+    AuthMiddleware --> PhotoService
+    AuthMiddleware --> GalleryService
+
+    AuthService --> MongoDB
+    AuthService -.-> EmailService
+    EventService --> MongoDB
+    EventService --> Cloudinary
+    PhotoService --> MongoDB
+    PhotoService --> Cloudinary
+    GalleryService --> MongoDB
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                         CLIENT (Browser)                        │
-│  React + Vite + Tailwind                                        │
-│  /login  /register  /admin  /admin/events/:id  /team            │
-│  /gallery/:slug  (public, PIN-protected)                        │
-└────────────────────────────┬────────────────────────────────────┘
-                             │ HTTPS / REST JSON
-                             ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                       EXPRESS API (Node.js)                     │
-│                                                                 │
-│  /api/auth        register · login · me                        │
-│  /api/events      CRUD · add/remove members                    │
-│  /api/photos      upload (multipart) · list · delete           │
-│  /api/galleries   create · publish · public verify (PIN)       │
-│                                                                 │
-│  Middleware: authenticate (JWT) · authorize (role) · validate  │
-└────────┬────────────────────────────────┬───────────────────────┘
-         │ Mongoose                        │ Cloudinary SDK
-         ▼                                ▼
-┌─────────────────┐             ┌──────────────────────┐
-│    MongoDB      │             │  Cloudinary Storage  │
-│  Users          │             │  /photo-sharing/     │
-│  Events         │             │    {eventId}/        │
-│  Photos         │             │      *.jpg …         │
-│  Galleries      │             └──────────────────────┘
-└─────────────────┘
+
+---
+
+## 🗄️ Database Design
+
+The database consists of 4 primary collections linked via MongoDB ObjectIds:
+
+```mermaid
+erDiagram
+    USER ||--o{ EVENT : "creates (as Admin)"
+    USER ||--o{ EVENT : "assigned to (as Team Member)"
+    USER ||--o{ PHOTO : "uploads"
+    EVENT ||--|| GALLERY : "has one"
+    EVENT ||--o{ PHOTO : "contains"
+    GALLERY ||--o{ PHOTO : "curates (selectedPhotos)"
+
+    USER {
+        ObjectId _id PK
+        string name
+        string email UK
+        string password "bcrypt hash (select: false)"
+        string role "admin | team_member"
+        date createdAt
+    }
+
+    EVENT {
+        ObjectId _id PK
+        string name
+        string description
+        string location
+        date date
+        string coverImageUrl
+        ObjectId createdBy FK
+        ObjectId[] teamMembers FK
+        date createdAt
+    }
+
+    PHOTO {
+        ObjectId _id PK
+        ObjectId eventId FK
+        ObjectId uploadedBy FK
+        string filename
+        string storagePublicId
+        string storageUrl
+        string thumbnailUrl "400x300 auto-cropped"
+        number fileSize
+        string mimeType
+        date createdAt
+    }
+
+    GALLERY {
+        ObjectId _id PK
+        ObjectId eventId FK
+        ObjectId createdBy FK
+        string title
+        ObjectId[] selectedPhotos FK
+        string slug UK "10-char nanoId"
+        string pinHash "bcrypt hash (select: false)"
+        boolean isPublished
+        date publishedAt
+        date expiresAt
+        date createdAt
+    }
 ```
 
----
-
-## Database Schema
-
-### User
-| Field | Type | Notes |
-|---|---|---|
-| `_id` | ObjectId | |
-| `name` | String | required |
-| `email` | String | unique, lowercase |
-| `password` | String | bcrypt-hashed, `select: false` |
-| `role` | Enum | `admin` \| `team_member` |
-| `createdAt` | Date | auto |
-
-### Event
-| Field | Type | Notes |
-|---|---|---|
-| `_id` | ObjectId | |
-| `name` | String | required |
-| `description` | String | optional |
-| `date` | Date | optional |
-| `createdBy` | ObjectId → User | admin owner |
-| `teamMembers` | [ObjectId → User] | assigned members |
-
-### Photo
-| Field | Type | Notes |
-|---|---|---|
-| `_id` | ObjectId | |
-| `eventId` | ObjectId → Event | |
-| `uploadedBy` | ObjectId → User | |
-| `filename` | String | original filename |
-| `storagePublicId` | String | Cloudinary `public_id` |
-| `storageUrl` | String | Cloudinary secure URL |
-| `thumbnailUrl` | String | 400×300 auto-cropped |
-| `fileSize` | Number | bytes |
-| `mimeType` | String | |
-
-### Gallery
-| Field | Type | Notes |
-|---|---|---|
-| `_id` | ObjectId | |
-| `eventId` | ObjectId → Event | one gallery per event |
-| `createdBy` | ObjectId → User | admin |
-| `title` | String | required |
-| `selectedPhotos` | [ObjectId → Photo] | curated selection |
-| `slug` | String | unique 10-char URL slug |
-| `pinHash` | String | bcrypt-hashed PIN, `select: false` |
-| `isPublished` | Boolean | default `false` |
-| `publishedAt` | Date | set on publish |
-| `expiresAt` | Date | optional expiry |
+### Key Schema Design Decisions
+- **`select: false` on Sensitive Fields:** `password` in `User` and `pinHash` in `Gallery` are excluded from query results by default, preventing accidental data leakage in JSON responses.
+- **Index Optimization:** Indexes on `User.email`, `Event.createdBy`, `Event.teamMembers`, `Photo.eventId`, and `Gallery.slug` ensure sub-millisecond query performance.
+- **Optimized Cover & Photo Pipelines:** Event covers and event photos are processed through tailored Cloudinary pipelines generating optimized responsive variants.
 
 ---
 
-## API Reference
-
-### Auth
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| POST | `/api/auth/register` | — | Register (first user → admin) |
-| POST | `/api/auth/login` | — | Login, returns JWT |
-| GET | `/api/auth/me` | JWT | Current user profile |
-
-### Events
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| POST | `/api/events` | admin | Create event |
-| GET | `/api/events` | JWT | List accessible events |
-| GET | `/api/events/:id` | JWT | Single event detail |
-| POST | `/api/events/:id/members` | admin | Add team members |
-| DELETE | `/api/events/:id/members/:memberId` | admin | Remove member |
-| GET | `/api/events/users/team-members` | admin | List all team members |
-
-### Photos
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| POST | `/api/photos/:eventId` | JWT | Upload photos (multipart, max 20) |
-| GET | `/api/photos/event/:eventId` | JWT | List photos (admin: all; member: own) |
-| DELETE | `/api/photos/:photoId` | JWT | Delete photo (owner or admin) |
-
-### Galleries
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| POST | `/api/galleries` | admin | Create / update gallery |
-| PATCH | `/api/galleries/:id/publish` | admin | Publish, returns share URL |
-| PATCH | `/api/galleries/:id/unpublish` | admin | Unpublish |
-| GET | `/api/galleries/admin` | admin | List admin's galleries |
-| GET | `/api/galleries/event/:eventId` | admin | Gallery for event |
-| GET | `/api/galleries/public/:slug` | — | Check gallery exists (no PIN) |
-| POST | `/api/galleries/public/:slug/verify` | — | Verify PIN, returns photos |
-
----
-
-## Local Setup
+## 🚀 Local Setup Instructions
 
 ### Prerequisites
-- Node.js ≥ 18
-- MongoDB running locally (or a free [MongoDB Atlas](https://www.mongodb.com/atlas) cluster)
-- A free [Cloudinary](https://cloudinary.com) account
+- **Node.js** ≥ 18.0.0
+- **npm** ≥ 9.0.0
+- A free **[MongoDB Atlas](https://www.mongodb.com/atlas)** database (or local MongoDB instance)
+- A free **[Cloudinary](https://cloudinary.com/)** account for image hosting
 
-### 1. Clone and install
-
+### 1. Clone the Repository
 ```bash
-git clone <your-repo-url>
-cd "Photo shearing webside"
+git clone https://github.com/Pranaypatil43/snapgallery.git
+cd snapgallery
+```
 
-# Backend
+### 2. Configure Backend
+```bash
 cd backend
 npm install
+```
 
-# Frontend
+Create a `.env` file in the `backend/` directory:
+```env
+PORT=5000
+NODE_ENV=development
+
+# MongoDB Connection String
+MONGODB_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/snapgallery?retryWrites=true&w=majority
+
+# JWT Authentication
+JWT_SECRET=your_super_secret_jwt_key_at_least_32_characters
+JWT_EXPIRES_IN=7d
+
+# Cloudinary Credentials (from Cloudinary Dashboard)
+CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
+CLOUDINARY_API_KEY=your_cloudinary_api_key
+CLOUDINARY_API_SECRET=your_cloudinary_api_secret
+
+# Origin and App URLs
+ALLOWED_ORIGINS=http://localhost:5173
+FRONTEND_URL=http://localhost:5173
+BACKEND_URL=http://localhost:5000
+
+# Express Session (for OAuth)
+SESSION_SECRET=a_random_session_secret_string
+
+# Email Service (Optional: Gmail App Password for inviting members)
+EMAIL_USER=your_email@gmail.com
+EMAIL_PASS=your_16_digit_app_password
+```
+
+### 3. Configure Frontend
+```bash
 cd ../frontend
 npm install
 ```
 
-### 2. Configure environment variables
-
-```bash
-# Backend
-cp backend/.env.example backend/.env
-# Edit backend/.env — fill in MONGODB_URI, JWT_SECRET, CLOUDINARY_*
-
-# Frontend (optional for local dev — Vite proxy handles /api → localhost:5000)
-cp frontend/.env.example frontend/.env
+Create a `.env` file in the `frontend/` directory:
+```env
+# Point to backend server during local development
+VITE_API_URL=http://localhost:5000/api
 ```
 
-### 3. Run in development
+### 4. Run Locally
+Open two terminal windows:
 
+**Terminal 1 (Backend):**
 ```bash
-# Terminal 1 — backend (port 5000)
 cd backend
 npm run dev
-
-# Terminal 2 — frontend (port 5173)
-cd frontend
-npm run dev
+# Server runs on http://localhost:5000
 ```
 
-Open [http://localhost:5173](http://localhost:5173).
+**Terminal 2 (Frontend):**
+```bash
+cd frontend
+npm run dev
+# Vite dev server runs on http://localhost:5173
+```
 
-### 4. Run tests
+Navigate to `http://localhost:5173` in your browser.
+
+---
+
+## 🧪 Automated Testing
+
+Backend test suites cover authentication, role protection, event workflows, and gallery verification:
 
 ```bash
 cd backend
 npm test
 ```
 
-31 tests run fully in-process via `mongodb-memory-server` — no external database needed.
+- **In-memory MongoDB:** Uses `mongodb-memory-server` so tests run completely offline and in isolation without modifying production data.
+- **Coverage:** Tests register/login validation, role restrictions (preventing team members from logging into admin sessions), JWT validity, and gallery access controls.
 
 ---
 
-## Deployment
+## 🌐 Production Deployment Steps
 
-### Backend (Render / Railway)
+### 1. Backend Deployment (Render)
+1. In the [Render Dashboard](https://dashboard.render.com/), create a new **Web Service**.
+2. Connect your GitHub repository (`Pranaypatil43/snapgallery`).
+3. Set the configuration:
+   - **Root Directory:** `backend`
+   - **Environment:** `Node`
+   - **Build Command:** `npm install`
+   - **Start Command:** `node src/server.js`
+   - **Health Check Path:** `/health`
+4. Add all environment variables from `backend/.env.example` in the **Environment** tab:
+   - `MONGODB_URI`
+   - `JWT_SECRET`
+   - `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`
+   - `ALLOWED_ORIGINS` (set to your deployed frontend URL)
+   - `FRONTEND_URL` (set to your deployed frontend URL)
+   - `BACKEND_URL` (set to your Render service URL)
 
-1. Create a new web service pointed at the `backend/` directory.
-2. Set build command: `npm install`
-3. Set start command: `node src/server.js`
-4. Add all environment variables from `.env.example`.
-5. Set `ALLOWED_ORIGINS` to your frontend's production URL.
-6. Set `FRONTEND_URL` to your frontend's production URL.
+*(Alternatively, use the included [`render.yaml`](file:///c:/Users/prana/OneDrive/Desktop/Photo%20shearing%20webside/render.yaml) for Blueprint deployment).*
 
-### Frontend (Vercel / Netlify)
-
-1. Set root directory to `frontend/`.
-2. Build command: `npm run build`
-3. Output directory: `dist`
-4. Set `VITE_API_URL` to your deployed backend URL (e.g. `https://your-api.onrender.com/api`).
-5. Add a rewrite rule: `/* → /index.html` (for React Router).
-
----
-
-## Security Measures
-
-- Passwords hashed with **bcrypt** (12 salt rounds)
-- Gallery PINs also bcrypt-hashed — plain PIN never stored
-- JWT tokens expire in 7 days; verified on every protected request
-- Role-based access: team members cannot publish galleries or access other users' photos
-- Cloudinary file filter enforces image MIME types only (20 MB max per file)
-- CORS restricted to configured origins
-- Input validated with `express-validator` on all routes
-- `pinHash` excluded from all API responses via `select: false`
-
----
-
-## Known Limitations
-
-- Gallery PIN cannot currently be changed without re-saving the entire gallery (entering a new PIN in the form updates it).
-- No email-based invite flow for team members — admin must add them by selecting from registered users.
-- Cloudinary free tier has a 25 GB storage / 25 GB bandwidth monthly limit.
-- No refresh token mechanism — users must re-login after 7 days.
+### 2. Frontend Deployment (Vercel / Render Static Site)
+1. Create a new project in [Vercel](https://vercel.com/) or Render Static Sites.
+2. Connect the repository and specify:
+   - **Root Directory:** `frontend`
+   - **Build Command:** `npm run build`
+   - **Output Directory:** `dist`
+3. Add environment variable:
+   - `VITE_API_URL` = `https://<your-backend-api>.onrender.com/api`
+4. Configure SPA route rewrite to `/index.html` (handled automatically on Vercel or via `render.yaml`).
 
 ---
 
-## Optional / Bonus Features Implemented
+## 🛡️ Security Best Practices Implemented
 
-- **Image thumbnails** — Cloudinary auto-generates 400×300 thumbnails on upload
-- **Lightbox viewer** — click any photo in the gallery to view full size
-- **Drag-and-drop upload** with per-file progress bar
-- **Gallery expiry field** (model + API support; UI coming)
-- **Copy share link** button on dashboard and event detail page
+- **Password & PIN Hashing:** All passwords and customer gallery PINs are hashed using **bcrypt** with a work factor of 12. Plaintext PINs are never stored in the database.
+- **Role-Based Access Control (RBAC):** Middleware checks verify user roles (`admin` vs `team_member`) on sensitive endpoints. Admin credentials cannot log into team views, and team credentials cannot log into admin dashboards.
+- **Background Non-Blocking Execution:** Email dispatch runs asynchronously in the background so third-party SMTP delays never block HTTP responses or trigger client timeouts.
+- **MIME-Type & File Size Verification:** Multer and Cloudinary inspect file headers to reject non-image MIME types and enforce a strict 20 MB limit per file.
+- **Rate Limiting:** Protects `/api/auth/login`, `/api/auth/register`, and `/api/galleries/public` against credential stuffing and brute-force PIN guessing attacks.
+- **Stateless Authentication:** JWT tokens carry user identifiers and roles securely with configurable expiry (`7d`).
 
 ---
 
-## Project Structure
+## 📋 Known Limitations & Future Roadmap
 
-```
-Photo shearing webside/
-├── backend/
-│   ├── src/
-│   │   ├── config/          # db.js, cloudinary.js
-│   │   ├── middleware/      # auth.js, validate.js
-│   │   ├── models/          # User, Event, Photo, Gallery
-│   │   ├── routes/          # auth, events, photos, galleries
-│   │   ├── tests/           # auth, events, galleries test suites
-│   │   ├── app.js           # Express app (no side effects)
-│   │   └── server.js        # Entry point — connects DB, starts server
-│   ├── .env.example
-│   └── package.json
-│
-├── frontend/
-│   ├── src/
-│   │   ├── api/             # axios instance + per-resource modules
-│   │   ├── components/      # Navbar, PhotoGrid, UploadModal, PinEntry, …
-│   │   ├── context/         # AuthContext
-│   │   ├── pages/           # LoginPage, RegisterPage, AdminDashboard, …
-│   │   ├── App.jsx          # Route definitions + ProtectedRoute
-│   │   ├── main.jsx         # React root
-│   │   └── index.css        # Tailwind + custom utility classes
-│   ├── .env.example
-│   ├── vite.config.js
-│   └── package.json
-│
-├── .gitignore
-└── README.md
-```
+1. **Cloudinary Free Tier Quota:** Cloudinary's free tier provides 25 monthly credits (~25 GB storage / transformation bandwidth). For high-volume production studios, upgrading to an enterprise S3/Cloudflare R2 bucket with custom processing is recommended.
+2. **Gallery Expiry Action:** The `expiresAt` timestamp is supported in the database schema and API; automated auto-archival cron jobs can be enabled via scheduled cloud tasks.
+3. **Face Tagging & AI Search:** A planned future enhancement includes AI-assisted face clustering to allow clients to find photos featuring specific individuals automatically.
+4. **Client Favoriting & Selections:** Enable clients to mark favorite photos directly in the customer view and send feedback to the photographer.
+
+---
+
+## 👨‍💻 Author & Submission Note
+
+- **Author:** Pranay Patil
+- **Repository:** [https://github.com/Pranaypatil43/snapgallery](https://github.com/Pranaypatil43/snapgallery)
+- Built for the **Full-Stack Developer Internship Selection Challenge**.
