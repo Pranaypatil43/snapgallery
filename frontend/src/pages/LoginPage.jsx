@@ -4,8 +4,11 @@ import { login as loginApi } from '../api/auth';
 import { accessGalleryByPin } from '../api/galleries';
 import { useAuth } from '../context/AuthContext';
 import Spinner from '../components/Spinner';
+const BACKEND_BASE = import.meta.env.VITE_API_URL
+  ? import.meta.env.VITE_API_URL.replace(/\/api\/?$/, '')
+  : (import.meta.env.PROD ? 'https://snapgallery-4jqc.onrender.com' : 'http://localhost:5000');
 
-const GOOGLE_AUTH_URL = `${import.meta.env.VITE_API_URL?.replace('/api','') || 'http://localhost:5000'}/api/auth/google`;
+const GOOGLE_AUTH_URL = `${BACKEND_BASE}/api/auth/google`;
 
 /* ── Google Logo ── */
 const GoogleLogo = () => (

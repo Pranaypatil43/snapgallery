@@ -12,7 +12,7 @@ and publish a PIN-protected gallery, and customers can access it via a shareable
 | Resource | URL |
 |---|---|
 | Frontend | _Add your deployed URL here_ |
-| Backend API | _Add your deployed API URL here_ |
+| Backend API | https://snapgallery-4jqc.onrender.com |
 | Demo Gallery | _Add your demo gallery URL here_ |
 
 ### Demo Credentials

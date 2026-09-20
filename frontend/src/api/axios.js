@@ -1,7 +1,10 @@
 import axios from 'axios';
 
+const defaultBaseURL = import.meta.env.VITE_API_URL 
+  || (import.meta.env.PROD ? 'https://snapgallery-4jqc.onrender.com/api' : '/api');
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  baseURL: defaultBaseURL,
   timeout: 30000,
 });
 
