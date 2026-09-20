@@ -179,18 +179,20 @@ router.get(
 router.get(
   '/google/callback',
   (req, res, next) => {
+    const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/+$/, '');
     if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
-      return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/login?error=google_not_configured`);
+      return res.redirect(`${frontendUrl}/login?error=google_not_configured`);
     }
     passport.authenticate('google', {
       session: false,
-      failureRedirect: `${process.env.FRONTEND_URL}/login?error=google_failed`,
+      failureRedirect: `${frontendUrl}/login?error=google_failed`,
     })(req, res, next);
   },
   (req, res) => {
+    const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/+$/, '');
     // passport.authenticate sets req.user = false when strategy calls done(null, false)
     if (!req.user) {
-      return res.redirect(`${process.env.FRONTEND_URL}/login?error=no_account`);
+      return res.redirect(`${frontendUrl}/login?error=no_account`);
     }
 
     // Issue our own JWT — same as email/password login
@@ -207,7 +209,7 @@ router.get(
       token,
       user: JSON.stringify(user),
     });
-    res.redirect(`${process.env.FRONTEND_URL}/auth/callback?${params.toString()}`);
+    res.redirect(`${frontendUrl}/auth/callback?${params.toString()}`);
   }
 );
 

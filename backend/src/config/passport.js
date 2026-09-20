@@ -2,13 +2,20 @@ const passport = require('passport');
 const { Strategy: GoogleStrategy } = require('passport-google-oauth20');
 const User = require('../models/User');
 
+const backendBase = (
+  process.env.BACKEND_URL ||
+  (process.env.NODE_ENV === 'production'
+    ? 'https://snapgallery-4jqc.onrender.com'
+    : 'http://localhost:5000')
+).replace(/\/+$/, '');
+
 if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
   passport.use(
     new GoogleStrategy(
       {
         clientID:     process.env.GOOGLE_CLIENT_ID,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-        callbackURL:  `${process.env.BACKEND_URL || 'http://localhost:5000'}/api/auth/google/callback`,
+        callbackURL:  `${backendBase}/api/auth/google/callback`,
       },
       async (accessToken, refreshToken, profile, done) => {
         try {
